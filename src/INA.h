@@ -156,6 +156,7 @@ Written by Arnd <Arnd@Zanduino.Com> at https://www.github.com/SV-Zanshin
 #include "WProgram.h"
 #endif
 
+#include "Wire.h"
 #ifndef INA__Class_h
 /*! Guard code definition to prevent multiple includes */
 #define INA__Class_h
@@ -270,7 +271,7 @@ class INA_Class {
  public:
   INA_Class(uint8_t expectedDevices = 0);
   ~INA_Class();
-  uint8_t     begin(const uint16_t maxBusAmps, const uint32_t microOhmR,
+  uint8_t     begin(const uint16_t maxBusAmps, const uint32_t microOhmR, TwoWire *theWire = &Wire,
                     const uint8_t deviceNumber = UINT8_MAX);
   void        setI2CSpeed(const uint32_t i2cSpeed = INA_I2C_STANDARD_MODE) const;
   void        setMode(const uint8_t mode, const uint8_t deviceNumber = UINT8_MAX);
@@ -319,5 +320,9 @@ class INA_Class {
 #else
   inaEEPROM _EEPROMEmulation[32];  ///< Actual array of up to 32 devices
 #endif
+
+protected:
+  TwoWire *_wire; //!< pointer to a TwoWire object
+
 };  // of INA_Class definition
 #endif

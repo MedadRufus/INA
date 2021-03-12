@@ -105,12 +105,12 @@ int16_t INA_Class::readWord(const uint8_t addr, const uint8_t deviceAddress) con
       @param[in] addr I2C address to read from
       @param[in] deviceAddress Address on the I2C device to read from
       @return    integer value read from the I2C device */
-  Wire.beginTransmission(deviceAddress);        // Address the I2C device
-  Wire.write(addr);                             // Send register address to read
-  Wire.endTransmission();                       // Close transmission
+  _wire->beginTransmission(deviceAddress);        // Address the I2C device
+  _wire->write(addr);                             // Send register address to read
+  _wire->endTransmission();                       // Close transmission
   delayMicroseconds(I2C_DELAY);                 // delay required for sync
-  Wire.requestFrom(deviceAddress, (uint8_t)2);  // Request 2 consecutive bytes
-  return ((uint16_t)Wire.read() << 8) | Wire.read();
+  _wire->requestFrom(deviceAddress, (uint8_t)2);  // Request 2 consecutive bytes
+  return ((uint16_t)_wire->read() << 8) | _wire->read();
 }  // of method readWord()
 void INA_Class::writeWord(const uint8_t addr, const uint16_t data,
                           const uint8_t deviceAddress) const {
@@ -120,11 +120,11 @@ void INA_Class::writeWord(const uint8_t addr, const uint16_t data,
       @param[in] addr I2C address to write to
       @param[in] data 2 Bytes to write to the device
       @param[in] deviceAddress Address on the I2C device to write to */
-  Wire.beginTransmission(deviceAddress);  // Address the I2C device
-  Wire.write(addr);                       // Send register address to write
-  Wire.write((uint8_t)(data >> 8));       // Write the first (MSB) byte
-  Wire.write((uint8_t)data);              // and then the second byte
-  Wire.endTransmission();                 // Close transmission and actually send data
+  _wire->beginTransmission(deviceAddress);  // Address the I2C device
+  _wire->write(addr);                       // Send register address to write
+  _wire->write((uint8_t)(data >> 8));       // Write the first (MSB) byte
+  _wire->write((uint8_t)data);              // and then the second byte
+  _wire->endTransmission();                 // Close transmission and actually send data
   delayMicroseconds(I2C_DELAY);           // delay required for sync
 }  // of method writeWord()
 void INA_Class::readInafromEEPROM(const uint8_t deviceNumber) {
@@ -188,9 +188,9 @@ void INA_Class::setI2CSpeed(const uint32_t i2cSpeed) const {
                  speeds. The valid speeds are  100KHz, 400KHz, 1MHz and 3.4MHz. Default to 100KHz
                  when not specified. No range checking is done.
       @param[in] i2cSpeed [optional] changes the I2C speed to the rate specified in Herz */
-  Wire.setClock(i2cSpeed);
+  _wire->setClock(i2cSpeed);
 }  // of method setI2CSpeed
-uint8_t INA_Class::begin(const uint16_t maxBusAmps, const uint32_t microOhmR,
+uint8_t INA_Class::begin(const uint16_t maxBusAmps, const uint32_t microOhmR, TwoWire *theWire,
                          const uint8_t deviceNumber) {
   /*! @brief     Initializes the contents of the class
       @details   Searches for possible devices and sets the INA Configuration details, without
@@ -206,6 +206,7 @@ uint8_t INA_Class::begin(const uint16_t maxBusAmps, const uint32_t microOhmR,
                  device's internal power register
       @param[in] deviceNumber Device number to explicitly set the maxBusAmps and microOhmR values,
                  by default all devices found get set to the same initial values for these 2 params
+      @param[in] theWire the I2C object to use, defaults to &Wire
       @return    The integer number of INAxxxx devices found on the I2C bus
   */
   uint16_t originalRegister, tempRegister;
@@ -231,7 +232,8 @@ uint8_t INA_Class::begin(const uint16_t maxBusAmps, const uint32_t microOhmR,
 #else
     maxDevices = 32;
 #endif
-    Wire.begin();
+    _wire = theWire;
+    _wire->begin();
 
     if (maxDevices > 255)  // Limit number of devices to an 8-bit number
     {
@@ -240,8 +242,8 @@ uint8_t INA_Class::begin(const uint16_t maxBusAmps, const uint32_t microOhmR,
     for (uint8_t deviceAddress = 0x40; deviceAddress <= 0x4F;
          deviceAddress++)  // Loop for each I2C addr
     {
-      Wire.beginTransmission(deviceAddress);
-      uint8_t good = Wire.endTransmission();
+      _wire->beginTransmission(deviceAddress);
+      uint8_t good = _wire->endTransmission();
       if (good == 0 && _DeviceCount < maxDevices)  // If no error and EEPROM has space
       {
         originalRegister = readWord(INA_CONFIGURATION_REGISTER, deviceAddress);  // Save settings
